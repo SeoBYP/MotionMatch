@@ -19,3 +19,7 @@
 /Assets/MocapData.meta
 /Assets/StreamingAssets/
 /Assets/StreamingAssets.meta
+
+# 유료 에셋 스토어 팩 (재배포 불가, 1.6GB)
+/Assets/Universal_Traversal_Anims/
+/Assets/Universal_Traversal_Anims.meta

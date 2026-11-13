@@ -59,6 +59,38 @@
 
 ## 데이터
 
+### 이 프로젝트에서 쓰는 팩: Ultimate Traversal Anims 2.0
+
+에셋 스토어 유료 팩입니다. `Assets/Universal_Traversal_Anims`에 있고 저장소에는 올리지 않습니다. 아래는 블렌더 5.0으로 `Art/Animations/New Animations 2.0`의 FBX를 열어 측정한 값입니다. 54개 이동 클립 중 15개만 측정했습니다.
+
+| 항목 | 측정값 | 측정한 클립 |
+|---|---|---|
+| 프레임률 | FBX 헤더 `TimeMode: 6` (30fps) | 6개 모두 동일 |
+| 본 | 52개 + 최상위 `root` 노드. 단위는 cm (스케일 0.01) | 6개 |
+| 루트 이동 | 등속 직선. `RunForward`가 0 → 0.797 → 1.590m | 이동 클립 전부 |
+| 루프 | 골반의 루트 기준 위치가 첫 프레임과 끝 프레임에서 동일 | `RunForward`, `WalkLeft`, `Idle` |
+| 루트 회전 있음 | 0° → -107° | `TurnLeft90`, `RunForwardPivotLeft90` |
+| 루트 회전 없음 | 0° 유지, 이동 0.047m | `RunTurn180` |
+
+| 클립 | 길이 | 이동 거리 | 평균 속도 |
+|---|---|---|---|
+| `WalkForward` | 1.200초 | 1.029m | 0.86 m/s |
+| `RunForward`, `RunBack`, `RunLeft` | 0.833초 | 1.590m | 1.91 m/s |
+| `RunFasterForward` | 0.833초 | 2.662m | 3.19 m/s |
+| `SprintForward` | 0.633초 | 4.744m | 7.49 m/s |
+| `RunForwardPivotLeft90` | 1.033초 | 2.135m | 2.07 m/s |
+
+확인하지 못한 것:
+
+- 유니티에서 Generic 리그로 임포트했을 때 `root` Transform이 실제로 움직이는지
+- 클립 길이. 블렌더는 `RunForward`를 25구간으로 읽었고 유니티 메타 파일에는 `lastFrame: 24`로 적혀 있음
+- 옆걸음·뒷걸음 클립에서 몸이 향하는 방향
+- 측정하지 않은 나머지 39개 클립
+
+짧은 루프·출발·정지·전환 클립으로 DB를 구성하는 것은 언리얼의 모션 매칭 문서 예시와 같은 방식입니다: [Motion Matching in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-matching-in-unreal-engine), [Game Animation Sample Project](https://dev.epicgames.com/documentation/en-us/unreal-engine/game-animation-sample-project-in-unreal-engine). 언리얼은 루프 클립에 더하는 `Looping Cost Bias`와 현재 포즈 유지를 유도하는 `Continuing Pose Cost Bias`를 둡니다. 루프 클립에서 미래 궤적을 되감는 동작은 이 문서들에서 확인하지 못했습니다.
+
+### 참고용 공개 데이터 (원본 구현이 쓰는 것)
+
 | 이름 | 형식 | 비고 |
 |---|---|---|
 | [lafan1-resolved](https://github.com/orangeduck/lafan1-resolved) | BVH, FBX, 스킨 캐릭터 `Geno.fbx` | LAFAN1을 60fps로 다시 풀어낸 것. 발가락·손가락 포함. 비상업용. 유니티 임포트 결과는 확인하지 못함 |

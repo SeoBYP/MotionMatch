@@ -444,7 +444,7 @@ static void QueryTrajectoryDirection(
 궤적 예측:
 
 ```csharp
-const float PredDt = 20f / 60f;   // 20프레임 간격
+const float PredDt = 1f / 3f;   // 0.33초 간격 (60fps에서 20프레임, 30fps에서 10프레임)
 
 // 위치: 이전 예측값에서 이어서 적분
 trajPos[0] = simPos; trajVel[0] = simVel; trajAcc[0] = simAcc;
@@ -583,3 +583,62 @@ public static void ContactUpdate(
 `c.Position`을 발끝 목표로 두 관절 IK(엉덩이–무릎–발목)를 풉니다. 해법은 [Simple Two Joint IK](https://theorangeduck.com/page/simple-two-joint)와 원본 `ik_two_bone`을 참고하세요. 유니티 구현 예시는 JLPM22의 `Runtime/IK/TwoJointIK.cs`에 있습니다.
 
 저자는 이 발 고정을 "토이 수준"이라고 평가합니다. 다른 방법(데이터 보강, 보정 파라미터 조정)을 먼저 시도하고 마지막에 붙이는 것을 권합니다.
+
+## 9. 루프 클립의 미래 루트
+
+원본과 JLPM22에는 없는 처리입니다. 짧은 루프 클립(예: 0.83초 달리기)에서 1초 뒤의 궤적을 구하려면 클립 끝을 넘어야 합니다. 끝에서 처음으로 되감고, 한 바퀴 동안 루트가 움직인 만큼을 누적해 더합니다.
+
+검증 상태: 계산식은 한 바퀴에 30°씩 도는 곡선 루프로 검산해 연속 경로와 오차 7e-15로 일치했습니다. C# 코드는 유니티에서 실행해 보지 않았습니다.
+
+```csharp
+// 클립 r 안의 frame에서 offset 프레임 뒤의 루트 위치·회전 (DB 공간)
+static void FutureRoot(
+    PoseDb db, int r, int frame, int offset,
+    out Vector3 pos, out Quaternion rot)
+{
+    int start = db.rangeStarts[r];
+    int last = db.rangeStops[r] - 1;
+
+    if (!db.rangeLoops[r])
+    {
+        // 루프가 아니면 마지막 프레임에서 멈춘 것으로 본다
+        int t = Mathf.Min(frame + offset, last);
+        pos = db.Position(t, 0);
+        rot = db.Rotation(t, 0);
+        return;
+    }
+
+    // 첫 프레임과 끝 프레임이 같은 포즈이므로 한 바퀴는 (last - start) 구간
+    int len = last - start;
+    int rel = frame - start + offset;
+    int laps = rel / len;
+    int local = start + rel % len;
+
+    pos = db.Position(local, 0);
+    rot = db.Rotation(local, 0);
+
+    // 한 바퀴의 루트 변화: 첫 프레임의 루트를 끝 프레임의 루트로 옮기는 변환
+    Vector3 p0 = db.Position(start, 0);
+    Vector3 p1 = db.Position(last, 0);
+    Quaternion dRot = db.Rotation(last, 0) * Quaternion.Inverse(db.Rotation(start, 0));
+
+    for (int i = 0; i < laps; i++)
+    {
+        pos = dRot * (pos - p0) + p1;
+        rot = dRot * rot;
+    }
+}
+```
+
+궤적 특징은 이 결과를 현재 프레임의 루트 기준 로컬로 바꿔서 만듭니다.
+
+```csharp
+Quaternion inv = Quaternion.Inverse(db.Rotation(frame, 0));
+Vector3 localPos = inv * (pos - db.Position(frame, 0));
+Vector3 localDir = inv * (rot * Vector3.forward);
+// 특징에는 localPos.x, localPos.z 와 localDir.x, localDir.z 를 넣는다
+```
+
+재생 중 루프 끝에 닿았을 때의 처리(첫 프레임으로 되돌리고 기준점 다시 잡기)는 5절의 `UpdateAnimationSpaceOrigin`을 그대로 씁니다.
+
+끝 프레임이 첫 프레임과 같은 포즈라는 전제가 깨지면(끝 프레임이 한 프레임 모자라게 임포트된 경우) `len`을 `last - start + 1`로 바꾸고 `p1`, `dRot`를 "끝 프레임에서 한 프레임 더 진행한 값"으로 외삽해야 합니다. 1단계에서 첫·끝 프레임의 포즈 차이를 출력해 어느 쪽인지 확인하세요.
