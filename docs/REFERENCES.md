@@ -61,31 +61,79 @@
 
 ### 이 프로젝트에서 쓰는 팩: Ultimate Traversal Anims 2.0
 
-에셋 스토어 유료 팩입니다. `Assets/Universal_Traversal_Anims`에 있고 저장소에는 올리지 않습니다. 아래는 블렌더 5.0으로 `Art/Animations/New Animations 2.0`의 FBX를 열어 측정한 값입니다. 54개 이동 클립 중 15개만 측정했습니다.
+에셋 스토어 유료 팩입니다. `Assets/Universal_Traversal_Anims`에 있고 저장소에는 올리지 않습니다. 아래는 유니티 6000.6.7f1에서 `Art/Animations/New Animations 2.0`의 FBX 79개를 모두 Generic 리그로 임포트하고 `AnimationClip.SampleAnimation`으로 프레임마다 `root`를 읽은 값입니다. 팩 원본의 설정은 바꾸지 않고 복사본으로 측정했습니다.
 
-| 항목 | 측정값 | 측정한 클립 |
-|---|---|---|
-| 프레임률 | FBX 헤더 `TimeMode: 6` (30fps) | 6개 모두 동일 |
-| 본 | 52개 + 최상위 `root` 노드. 단위는 cm (스케일 0.01) | 6개 |
-| 루트 이동 | 등속 직선. `RunForward`가 0 → 0.797 → 1.590m | 이동 클립 전부 |
-| 루프 | 골반의 루트 기준 위치가 첫 프레임과 끝 프레임에서 동일 | `RunForward`, `WalkLeft`, `Idle` |
-| 루트 회전 있음 | 0° → -107° | `TurnLeft90`, `RunForwardPivotLeft90` |
-| 루트 회전 없음 | 0° 유지, 이동 0.047m | `RunTurn180` |
+이전에 블렌더 5.0으로 잰 값은 클립 길이가 1구간씩 길었고(예: `RunForward` 25구간), 그래서 속도가 약 4% 낮았으며 회전도 -107°로 잘못 읽혔습니다. 아래 값이 맞는 값입니다.
 
-| 클립 | 길이 | 이동 거리 | 평균 속도 |
+**공통**
+
+| 항목 | 측정값 |
+|---|---|
+| 프레임률 | 79개 모두 30fps |
+| 계층 | Transform 55개. 모델 루트 아래에 `root`가 자식으로 있고 그 아래 `pelvis`. 단위는 cm (`fileScale` 0.01) |
+| `root` 이동 | 샘플링하면 실제로 이동. Root node 설정과 Preserve Hierarchy에 무관 |
+| 클립 길이 | 메타 파일의 `lastFrame`과 같음. N구간이면 샘플은 0~N번, N+1개 |
+| 팩 원본 리그 | Humanoid. 구울 클립은 Generic으로 바꿔야 함 |
+
+**루프 클립** (첫·끝 프레임에서 골반의 `root` 기준 위치 차이 0.0001m 이하, `root` 회전은 처음부터 끝까지 0°)
+
+| 클립 | 길이 | 이동 거리 | 평균 속도 | 구간 속도 범위 |
+|---|---|---|---|---|
+| `Idle` | 7.000초 (210구간) | 0m | 0 | |
+| `WalkForward`, `WalkLeft`, `WalkRight`, `WalkForwardLeft`, `WalkForwardRight` | 1.167초 (35구간) | 1.029m | 0.88 m/s | 0.88~0.88 |
+| `WalkBack`, `WalkBackLeft`, `WalkBackRight` | 1.167초 (35구간) | 1.139m | 0.98 m/s | 0.79~1.17 |
+| `WalkForwardAlt01` / `WalkForwardAlt02` | 1.167초 (35구간) | 1.529m / 1.320m | 1.31 / 1.13 m/s | 1.12~1.70 / 0.92~1.40 |
+| `Run` 8방향 | 0.800초 (24구간) | 1.590m | 1.99 m/s | 1.82~2.12 |
+| `RunFaster` 8방향 | 0.800초 (24구간) | 2.662m | 3.33 m/s | 2.99~3.64 |
+| `SprintForward` | 0.600초 (18구간) | 4.744m | 7.91 m/s | 7.51~8.24 |
+| `Movement_Sprint_LeftFootStart` | 0.600초 (18구간) | 4.080m | 6.80 m/s | 6.51~6.99 |
+
+- 걷기는 후진 계열(0.98 m/s)이 전진·측면(0.88 m/s)보다 빠릅니다. 달리기와 빠른 달리기는 8방향이 같습니다.
+- 이동 방향은 직선이고 대각선은 정확히 45°입니다(예: `RunForwardLeft`가 `root` 기준 (-1.124, 1.124)m). 직선에서 벗어나는 양은 최대 0.04m입니다. 속도는 걷기 전진·측면만 완전한 등속이고 나머지는 한 걸음 안에서 ±7~10% 흔들립니다.
+- `RunFasterRight`만 첫·끝 골반 위치가 0.017m 어긋납니다.
+- 걷기 8방향은 속도가 두 가지(전진·측면 5개, 후진 계열 3개)로 나뉩니다.
+
+**몸이 향하는 방향** (양쪽 허벅지 본을 잇는 선에서 구한 골반 방향. `root` 전방 기준, 클립 평균)
+
+| 이동 방향 | 걷기 | 달리기 | 빠른 달리기 |
 |---|---|---|---|
-| `WalkForward` | 1.200초 | 1.029m | 0.86 m/s |
-| `RunForward`, `RunBack`, `RunLeft` | 0.833초 | 1.590m | 1.91 m/s |
-| `RunFasterForward` | 0.833초 | 2.662m | 3.19 m/s |
-| `SprintForward` | 0.633초 | 4.744m | 7.49 m/s |
-| `RunForwardPivotLeft90` | 1.033초 | 2.135m | 2.07 m/s |
+| 전진 | 0.5° | -1.9° | 1.7° |
+| 전진+왼쪽 / 전진+오른쪽 | -44.5° / 45.5° | -46.9° / 43.1° | -43.3° / 46.7° |
+| 왼쪽 / 오른쪽 | -65.3° / 65.5° | -66.9° / 63.1° | -63.3° / 66.7° |
+| 후진+왼쪽 / 후진+오른쪽 | 49.3° / -40.7° | 42.7° / -47.3° | 46.2° / -43.8° |
+| 후진 | 4.3° | -2.3° | 1.2° |
+
+`root`는 8방향 모두 같은 쪽(+Z)을 보고, 골반만 이동 방향 쪽으로 최대 약 65° 틀어집니다. 후진 계열은 뒷걸음입니다. 즉 이 8방향 세트는 "보는 방향을 고정하고 움직이는" 스트레이프용입니다. `Idle`은 같은 방법으로 재면 19.0°가 나오므로(선 자세에서 골반이 약간 돌아가 있음) 위 값에는 수 도 정도의 기준 오차가 있습니다.
+
+**전환 클립**
+
+| 클립 | 길이 | 이동(`root` 기준 x, z) | 평균 속도 | `root` 회전 변화 |
+|---|---|---|---|---|
+| `RunForwardStart` | 0.833초 (25구간) | (0, 1.370)m | 1.64 m/s (0.13~2.99) | 0° |
+| `RunForwardStop` | 2.167초 (65구간) | (0, 1.951)m | 0.90 m/s (0.00~2.76) | 0° |
+| `RunForwardPivotLeft90` / `Right90` | 1.000초 / 0.667초 | (-1.847, 1.071) / (0.704, 0.974)m | 2.14 / 1.80 m/s | -90° / +90° |
+| `RunForwardAvoidancePivotLeft90` / `Right90` | 1.167초 / 0.600초 | (-1.823, 2.010) / (0.695, 1.020)m | 2.33 / 2.06 m/s | -90° / +90° |
+| `WalkForwardStart` / `WalkForwardStop` | 1.600초 / 1.467초 | (0, 0.983) / (0, 0.196)m | 0.61 / 0.13 m/s | 0° |
+| `WalkForwardStopInPlace` | 1.467초 | 0m | 0 | 0° |
+| `WalkForwardStartAndStop` | 4.233초 | (0, 2.273)m | 0.54 m/s | 0° |
+| `WalkForwardPivotLeft90` / `Right90` | 2.467초 / 1.200초 | (-1.436, 1.337) / (0.597, 0.540)m | 0.80 / 0.67 m/s | -90° / +90° |
+| `WalkBackStart` / `WalkBackStop` | 2.033초 / 2.933초 | (0, -1.344) / (0, -0.845)m | 0.66 / 0.29 m/s | 0° |
+| `WalkBackStopInPlace` / `WalkBackStartAndStop` | 2.067초 / 4.967초 | 0 / (0, -2.196)m | 0 / 0.44 m/s | 0° |
+| `TurnLeft90` / `TurnRight90` | 2.667초 (80구간) | 0m | 0 | -90° / +90° |
+| `TurnLeft180` / `TurnRight180` | 2.667초 (80구간) | 0m | 0 | 180° |
+| `RunTurn180` | 1.167초 | (0, -0.047)m | 0.04 m/s | 0° (골반은 0° → -175°) |
+| `RunTurn180FastSlide` | 1.500초 | (0, 1.102)m | 구간 속도 최대 107 m/s | 0° |
+
+- 좌우 피벗은 길이와 이동 거리가 달라 서로 거울상이 아닙니다.
+- `RunTurn180`은 몸이 도는 동안 `root`가 회전하지 않고, `RunTurn180FastSlide`는 `root`가 한 프레임에 3.6m 튑니다. 둘 다 그대로는 DB에 넣을 수 없습니다.
+- 출발·정지 클립은 전진과 후진만 있습니다. 측면·대각선 출발·정지는 없습니다.
+
+**그 밖의 클립** (이동용이 아니라서 수치는 생략): `AimSpace_*` 9개는 1구간짜리 포즈, `DuckUnderPass*` 6개, `StepUpToPlatform100cm*` 4개, `JumpDown`, `JumpDownHeroLanding`, `JumpRunForward`, `RunForwardJumpHurdle106cm`, `RunForwardTicTacLeftWall`/`RightWall`, `RunForwardShoveAway`, `DoorOpenWalkThrough`, `Climb_Leap_Behind_Down_Alternate_Height`.
 
 확인하지 못한 것:
 
-- 유니티에서 Generic 리그로 임포트했을 때 `root` Transform이 실제로 움직이는지
-- 클립 길이. 블렌더는 `RunForward`를 25구간으로 읽었고 유니티 메타 파일에는 `lastFrame: 24`로 적혀 있음
-- 옆걸음·뒷걸음 클립에서 몸이 향하는 방향
-- 측정하지 않은 나머지 39개 클립
+- 발 접촉을 판정할 본 이름과 임계값(1단계에서 정할 값)
+- 에디터를 직접 열어 눈으로 본 재생 결과. 위 값은 모두 배치 모드에서 숫자로 읽은 것입니다
 
 짧은 루프·출발·정지·전환 클립으로 DB를 구성하는 것은 언리얼의 모션 매칭 문서 예시와 같은 방식입니다: [Motion Matching in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-matching-in-unreal-engine), [Game Animation Sample Project](https://dev.epicgames.com/documentation/en-us/unreal-engine/game-animation-sample-project-in-unreal-engine). 언리얼은 루프 클립에 더하는 `Looping Cost Bias`와 현재 포즈 유지를 유도하는 `Continuing Pose Cost Bias`를 둡니다. 루프 클립에서 미래 궤적을 되감는 동작은 이 문서들에서 확인하지 못했습니다.
 
